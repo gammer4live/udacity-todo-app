@@ -5,24 +5,21 @@ import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
-import * as createError from 'http-errors'
-import { getUserId } from '../lambda/utils';
-import * as AWS from 'aws-sdk'
-import * as AWSXRay from 'aws-xray-sdk'
+//import * as createError from 'http-errors'
+//import { getUserId } from '../lambda/utils';
+//import * as AWS from 'aws-sdk'
 // TODO: Implement businessLogic
 
 const logger = createLogger('Todo')
 
-const XAWS = AWSXRay.captureAWS(AWS)
+/*const XAWS = AWSXRay.captureAWS(AWS)
 
 const s3 = new XAWS.S3({
   signatureVersion: 'v4'
 })
-
+*/
 const todosAccess = new TodoAccess()
-
-const bucketName = process.env.IMAGES_S3_BUCKET
-const urlExpiration = process.env.SIGNED_URL_EXPIRATION
+const s3Util = new AttachmentUtils()
 
 export async function getTodosForUser(userId: string): Promise<TodoItem[]> {
   logger.info("BL getTodosForUser : "+userId)
@@ -78,7 +75,7 @@ export async function createAttachmentPresignedUrl (userId: string, todoId : str
 
     if(url)
     {
-      const resourceUrl = `https://${bucketName}.s3.amazonaws.com/${todoId}`
+      const resourceUrl = s3Util.generateResourceURL(todoItem.todoId)
 
       await todosAccess.updateTodoAttachmentUrl(userId,todoId,resourceUrl)
     }
@@ -91,15 +88,6 @@ export async function createAttachmentPresignedUrl (userId: string, todoId : str
 
   async function createPresignedUrl(id: String): Promise<String> {
     logger.info('createTodo ')
-
-    const s3 = new XAWS.S3({
-      signatureVersion: 'v4'
-    })
-    
-    return s3.getSignedUrl('putObject', {
-      Bucket: bucketName,
-      Key: id,
-      Expires: urlExpiration
-    })
+    return s3Util.getPresignedUrl(id)
 
   }
