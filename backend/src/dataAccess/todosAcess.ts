@@ -17,21 +17,21 @@ export class TodoAccess {
     constructor(
       private readonly docClient: DocumentClient = createDynamoDBClient(),
       private readonly todosTable = process.env.TODOS_TABLE,
+      private readonly todosTableIndex = process.env.TODOS_CREATED_AT_INDEX,
+
       ) {
     }
   
     async getTodos(userId: string): Promise<TodoItem[]> {
 
-      logger.info('Getting all Todos for user '+userId)
+      logger.info('Getting all Todos for user '+userId,this.todosTableIndex)
 
       const result = await this.docClient.query({
         TableName: this.todosTable,
-        IndexName: 'userId',
-        KeyConditionExpression: 'userId = :userId',
+        KeyConditionExpression: 'userId = :idUser',
         ExpressionAttributeValues: {
-          ':userId': userId
-        },
-        ScanIndexForward: false
+          ':idUser': userId
+        }
       }).promise()
     
       return result.Items as TodoItem[]
@@ -45,8 +45,8 @@ export class TodoAccess {
       .get({
         TableName: this.todosTable,
         Key: {
-          todoId,
-          userId
+          userId,
+          todoId
         }
       })
       .promise()
@@ -66,17 +66,20 @@ export class TodoAccess {
     }
 
     async updateTodo(userId: String, todoId: string, updateTodoRequest : UpdateTodoRequest) {
-      logger.info('updateTodo '+userId+" : "+todoId)
+      logger.info('updateTodo '+userId+" : "+todoId,updateTodoRequest)
 
       await this.docClient.update({
         TableName: this.todosTable,
         Key: {
-          todoId,
-          userId
+          userId,
+          todoId
         },
-        UpdateExpression: 'SET name = :name, dueDate = :dueDate, done = :done',
+        ExpressionAttributeNames: {
+          '#Tname': 'name'
+        },
+        UpdateExpression: 'SET #Tname = :titleName, dueDate = :dueDate, done = :done',
         ExpressionAttributeValues: {
-          ':name': updateTodoRequest.name,
+          ':titleName': updateTodoRequest.name,
           ':dueDate': updateTodoRequest.dueDate,
           ':done': updateTodoRequest.done
         }
@@ -89,8 +92,8 @@ export class TodoAccess {
       await this.docClient.update({
         TableName: this.todosTable,
         Key: {
-          todoId,
-          userId
+          userId,
+          todoId
         },
         UpdateExpression: 'SET attachmentUrl = :attachmentUrl',
         ExpressionAttributeValues: {
@@ -107,8 +110,8 @@ export class TodoAccess {
       await this.docClient.delete({
         TableName: this.todosTable,
         Key: {
-          todoId,
-          userId
+          userId,
+          todoId
         }
       }).promise()
     }

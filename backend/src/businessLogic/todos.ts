@@ -23,7 +23,12 @@ const s3Util = new AttachmentUtils()
 
 export async function getTodosForUser(userId: string): Promise<TodoItem[]> {
   logger.info("BL getTodosForUser : "+userId)
-  return todosAccess.getTodos(userId)
+  
+  var results :TodoItem[] = await todosAccess.getTodos(userId)
+
+  logger.info("BL getTodosForUser done : ",results)
+
+  return results
 }
 
 export async function createTodo(userId: string,
@@ -37,7 +42,10 @@ export async function createTodo(userId: string,
   return await todosAccess.createTodo({
     todoId: itemId,
     userId: userId,
-    ...createTodoRequest
+    name: createTodoRequest.name,
+    dueDate: createTodoRequest.dueDate,
+    done: false,
+    createdAt: new Date().toISOString(),
   })
 
   
@@ -87,7 +95,7 @@ export async function createAttachmentPresignedUrl (userId: string, todoId : str
   }
 
   async function createPresignedUrl(id: String): Promise<String> {
-    logger.info('createTodo ')
+    logger.info('createPresignedUrl ')
     return s3Util.getPresignedUrl(id)
 
   }

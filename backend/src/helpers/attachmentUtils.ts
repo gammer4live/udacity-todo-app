@@ -12,27 +12,33 @@ const XAWS = AWSXRay.captureAWS(AWS)
 export class AttachmentUtils {
 
     constructor(
-      private readonly bucketName = process.env.IMAGES_S3_BUCKET,
+      private readonly bucketName = process.env.ATTACHMENT_S3_BUCKET,
       private readonly urlExpiration = process.env.SIGNED_URL_EXPIRATION
       ) {
     }
 
-    async  getPresignedUrl(id: String): Promise<String> {
-        logger.info('getPresignedUrl ')
+    async  getPresignedUrl(resourceId: String): Promise<String> {
+        logger.info('getPresignedUrl '+resourceId)
     
         const s3 = new XAWS.S3({
           signatureVersion: 'v4'
         })
         
-        return s3.getSignedUrl('putObject', {
+        logger.info('getPresignedUrl  params '+this.bucketName+" "+this.urlExpiration)
+
+
+        var urlString = await s3.getSignedUrl('putObject', {
+          Key: resourceId,
           Bucket: this.bucketName,
-          Key: id,
           Expires: this.urlExpiration
         })
+
+        return urlString
     
       }
 
       generateResourceURL(resourceId: String): string{
+        logger.info('generateResourceURL '+resourceId)
 
         return `https://${this.bucketName}.s3.amazonaws.com/${resourceId}`
 

@@ -1,9 +1,9 @@
 export interface TodoItem {
   todoId: string
-  createdAt?: string
+  createdAt: string
   userId: string
   name: string
   dueDate: string
-  done?: boolean
+  done: boolean
   attachmentUrl?: string
 }
